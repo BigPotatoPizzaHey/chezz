@@ -5,7 +5,7 @@ Implementation of actual chess logic
 import dataclasses
 import enum
 import typing_extensions as t
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from chezz.geo import V2
 
 
@@ -121,6 +121,8 @@ class State:
 
     moves: list[Move] = dataclasses.field(default_factory=list)
     selected: t.Optional[V2] = None
+    accessible: list[V2] = field(default_factory=list)
+
     def get_positions(self) -> tuple[list[t.Optional[Piece]], dict[Colour, list[Piece]]]:
         board = self.start.copy()
         takes: dict[Colour, list[Piece]] = {
@@ -141,8 +143,64 @@ class State:
             board[move.end.into_idx()] = piece
         return board, takes
 
+    def get_moves_for(self, board: list[t.Optional[Piece]], pos: V2):
+        self.accessible.clear()
+        piece = board[pos.into_idx()]
+        if piece is None:
+            return
+        
+        match piece.type:
+            case PieceType.KNIGHT:
+                vecs = (
+                    V2(1, 2), V2(2, 1), V2(2, -1), V2(1, -2), 
+                    V2(-1, -2), V2(-2, -1), V2(-2, 1), V2(-1, 2)
+                )
+                for vec in vecs:
+                    new = pos + vec
+                    if not new.is_valid():
+                        continue
+                    target = board[new.into_idx()]
+                    if target and target.colour == piece.colour:
+                        continue
+                        
+                    self.accessible.append(new)
+            case PieceType.KING:
+                vecs = (
+                    V2(-1, 1), V2(0, 1), V2(1, 1), 
+                    V2(-1, 0),           V2(1, 0),
+                    V2(-1, -1),V2(0, -1),V2(1, -1)
+                )
+                for vec in vecs:
+                    new = pos + vec
+                    if not new.is_valid():
+                        continue
+                    target = board[new.into_idx()]
+                    if target and target.colour == piece.colour:
+                        continue
+                        
+                    self.accessible.append(new)
+            case PieceType.PAWN:
+                hasnt_moved = pos.y == 1 if piece.colour.is_black() else pos.y == 6
+                sign = -1 + 2 * piece.colour.is_black()
+                print(hasnt_moved, sign)
+
+                new = pos + V2(0, sign)
+                if new.is_valid() and not board[new.into_idx()]:
+                    self.accessible.append(new)
+                    # assuming that idx will always be valid because we are on y=1 or 6
+                    if hasnt_moved and not board[(pos + V2(0, sign)).into_idx()]:
+                        self.accessible.append(pos + V2(0, 2 * sign))
+                # TODO: pawn capture, en passant
+
+            case _:
+                raise NotImplementedError(f"{piece.type} move logic not determined")
+
     def __str__(self) -> str:
         board = self.get_positions()[0]
+        if self.selected:
+            self.get_moves_for(board, self.selected)
+        else:
+            self.accessible.clear()
         ret = ""
         for i in range(0, len(board), 8):
             row = board[i:i + 8]
@@ -157,6 +215,8 @@ class State:
         body = piece.get_sym(pos.is_black() ^ piece.colour.is_black()) if piece else "  "
         if self.selected and self.selected == pos:
             bg = "\033[41m"
+        elif self.selected and pos in self.accessible:
+            bg = "\033[43m"
         else:
             bg = "\033[40m" if pos.is_black() else "\033[47m"
         if piece:

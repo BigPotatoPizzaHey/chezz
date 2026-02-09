@@ -83,3 +83,6 @@ class V2:
 
     def is_black(self):
         return bool((self.x + self.y) % 2)
+
+    def is_valid(self):
+        return 0 <= self.x < 8 and 0 <= self.y < 8
