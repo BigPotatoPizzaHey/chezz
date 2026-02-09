@@ -76,5 +76,10 @@ class V2:
     def from_idx(cls, idx: int) -> t.Self:
         return cls(idx % 8, idx // 8)
 
+    @classmethod
+    def from_notation(cls, notation: str) -> t.Self:
+        assert len(notation) == 2
+        return cls(float("abcdefgh".index(notation[0])), 8 - float(notation[1]))
+
     def is_black(self):
         return bool((self.x + self.y) % 2)

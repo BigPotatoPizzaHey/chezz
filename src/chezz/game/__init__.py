@@ -4,7 +4,6 @@ Implementation of actual chess logic
 
 import dataclasses
 import enum
-from math import pi
 import typing_extensions as t
 from dataclasses import dataclass
 from chezz.geo import V2
@@ -121,6 +120,7 @@ class State:
     )
 
     moves: list[Move] = dataclasses.field(default_factory=list)
+    selected: t.Optional[V2] = None
     def get_positions(self) -> tuple[list[t.Optional[Piece]], dict[Colour, list[Piece]]]:
         board = self.start.copy()
         takes: dict[Colour, list[Piece]] = {
@@ -136,7 +136,7 @@ class State:
                 raise NotImplementedError("no promotion")
             piece = board[move.start.into_idx()]
             target = board[move.end.into_idx()]
-            print(f"{piece} takes {target}")
+            # print(f"{piece} takes {target}")
             board[move.start.into_idx()] = None
             board[move.end.into_idx()] = piece
         return board, takes
@@ -146,18 +146,22 @@ class State:
         ret = ""
         for i in range(0, len(board), 8):
             row = board[i:i + 8]
+            ret += str(8 - i // 8) + " "
             for j, piece in enumerate(row):
-                ret += make_sym(piece, V2.from_idx(i + j))
+                ret += self.make_sym(piece, V2.from_idx(i + j))
             ret += "\n"
+        ret += "  a b c d e f g h"
         return ret
 
+    def make_sym(self, piece: t.Optional[Piece], pos: V2) -> str:
+        body = piece.get_sym(pos.is_black() ^ piece.colour.is_black()) if piece else "  "
+        if self.selected and self.selected == pos:
+            bg = "\033[41m"
+        else:
+            bg = "\033[40m" if pos.is_black() else "\033[47m"
+        if piece:
+            fg = "\033[37m" if pos.is_black() else "\033[30m"
+        else:
+            fg = ""
 
-def make_sym(piece: t.Optional[Piece], pos: V2) -> str:
-    body = piece.get_sym(pos.is_black() ^ piece.colour.is_black()) if piece else "  "
-    bg = "\033[40m" if pos.is_black() else "\033[47m"
-    if piece:
-        fg = "\033[37m" if pos.is_black() else "\033[30m"
-    else:
-        fg = ""
-
-    return f"{fg}{bg}{body}\033[49m\033[39m"
+        return f"{fg}{bg}{body}\033[49m\033[39m"
