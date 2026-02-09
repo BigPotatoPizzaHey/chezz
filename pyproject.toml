@@ -1,10 +1,17 @@
 [project]
 name = "chezz"
-version = "0.0.0"
+version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+authors = [
+    { name = "bpph", email = "operationbumdrive1@gmail.com" }
+]
+requires-python = ">=3.12"
 dependencies = []
 
 [project.scripts]
-chezz = "chezz.__main__:main"
+chezz = "chezz:main"
+
+[build-system]
+requires = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"
