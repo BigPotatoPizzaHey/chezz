@@ -65,3 +65,6 @@ class V2:
         Dot product. Overrides `self @ other`
         """
         return self.x * other.x + self.y * other.y
+
+    def into_tuple(self) -> tuple[float, float]:
+        return (self.x, self.y)
