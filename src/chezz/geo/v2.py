@@ -68,3 +68,13 @@ class V2:
 
     def into_tuple(self) -> tuple[float, float]:
         return (self.x, self.y)
+
+    def into_idx(self) -> int:
+        return int(self.y * 8 + self.x)
+
+    @classmethod
+    def from_idx(cls, idx: int) -> t.Self:
+        return cls(idx % 8, idx // 8)
+
+    def is_black(self):
+        return bool((self.x + self.y) % 2)
